@@ -2,7 +2,8 @@ import os
 
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 
-from baseDatos import conectarCredenciales, integrantesCorreo, listaProyectos
+from baseDatos import conectarCredenciales, integrantesCorreo, listaProyectos, guardarMetricas, \
+    obtenerIdIntegrantePorCorreo, obtenerIdProyecto
 
 app = Flask(__name__)
 
@@ -19,24 +20,35 @@ def proyectos():
     paciente_data = listaProyectos(cred)
     return jsonify(paciente_data)
 
+
 @app.route("/", methods=["GET", "POST"])
-def index():
+def registrar():
     if request.method == "POST":
-        # Recibe los datos del formulario
-        nombre_proyecto = request.form["nombre_proyecto"]
-        dedicacion = request.form["dedicacion"]
-        riesgo = request.form["riesgo"]
-        valor = request.form["valor"]
+        # Procesar los datos del formulario
+        correo = request.form["correo"]
+        proyectos = request.form.getlist("proyecto[]")
+        dedicacion = request.form.getlist("dedicacion[]")
+        riesgo = request.form.getlist("riesgo[]")
+        valor = request.form.getlist("valor[]")
 
-        # Procesa o guarda los datos
-        print(f"Nombre del Proyecto: {nombre_proyecto}")
-        print(f"Dedicación: {dedicacion}%")
-        print(f"Riesgo: {riesgo}")
-        print(f"Valor: {valor}")
+        # Guardar la información
+        cred = conectarCredenciales("admin")
+        idIntegrante = obtenerIdIntegrantePorCorreo(cred, correo)
 
-        # Redirige o confirma el envío
-        return redirect(url_for("index"))
+        for i, proyecto in enumerate(proyectos):
+            if not (riesgo[i] == "" and not valor[i] == ""):
+                idProyecto = obtenerIdProyecto(cred, proyecto)
+                guardarMetricas(cred, idIntegrante, idProyecto, dedicacion[i], riesgo[i], valor[i])
+
+        # Redirigir a la página de agradecimiento
+        return redirect(url_for("gracias"))
+
     return render_template("formulario.html")
+
+
+@app.route("/gracias")
+def gracias():
+    return render_template("gracias.html")
 
 
 if __name__ == '__main__':

@@ -201,9 +201,57 @@ def listaProyectos(credenciales):
 
     return queryData
 
+def obtenerIdIntegrantePorCorreo(credenciales, correo):
+    # Conectar a la base de datos
+    conn = psycopg2.connect(
+        database=credenciales["database"],
+        user=credenciales["user"],
+        password=credenciales["password"],
+        host=credenciales["host"],
+        port=credenciales["port"]
+    )
+    cursor = conn.cursor()
 
+    # Consulta para obtener el ID del integrante según el correo
+    query = "SELECT ID FROM integrantes WHERE correo = %s AND habilitado = TRUE"
+    cursor.execute(query, (correo,))
 
-def guardarEvaluacionPostgres(identif, Tipo, Via, Evaluacion, timeInicio,credenciales):
+    # Obtener el resultado
+    result = cursor.fetchone()
+    integrante_id = result[0] if result else None
+
+    # Cerrar conexión
+    cursor.close()
+    conn.close()
+
+    return integrante_id
+
+def obtenerIdProyecto(credenciales, proyecto):
+    # Conectar a la base de datos
+    conn = psycopg2.connect(
+        database=credenciales["database"],
+        user=credenciales["user"],
+        password=credenciales["password"],
+        host=credenciales["host"],
+        port=credenciales["port"]
+    )
+    cursor = conn.cursor()
+
+    # Consulta para obtener el ID del integrante según el correo
+    query = "SELECT ID FROM proyectos WHERE nombre_proyecto = %s AND habilitado = TRUE"
+    cursor.execute(query, (proyecto,))
+
+    # Obtener el resultado
+    result = cursor.fetchone()
+    IdProyecto = result[0] if result else None
+
+    # Cerrar conexión
+    cursor.close()
+    conn.close()
+
+    return IdProyecto
+
+def guardarMetricas(credenciales,idIntegrante, idProyecto, dedicacion, riesgo, valor):
 
     conn =psycopg2.connect(
         database=credenciales["database"],
@@ -216,9 +264,9 @@ def guardarEvaluacionPostgres(identif, Tipo, Via, Evaluacion, timeInicio,credenc
     cursor = conn.cursor()
 
     query = f'''
-    INSERT INTO evaluaciones (
-        ID, Tipo, Via, Evaluacion, timeInicio
-    ) VALUES ({identif}, '{Tipo}', '{Via}', '{Evaluacion}', '{timeInicio}')
+    INSERT INTO metricas (
+        integrante_id, proyecto_id, dedicacion, riesgo, valor
+    ) VALUES ({idIntegrante}, '{idProyecto}', '{dedicacion}', '{riesgo}', '{valor}')
     '''
 
     cursor.execute(query)
