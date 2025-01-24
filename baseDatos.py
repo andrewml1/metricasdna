@@ -144,24 +144,64 @@ def guardar_datos_proyectos():
     )
 
     # Leer el archivo CSV
-    df = pd.read_csv('integrantes.csv', sep=';')
+    df = pd.read_csv('proyectos.csv', sep=';')
 
     cursor = conn.cursor()
     # Insertar los datos del DataFrame en la tabla
-    # Insertar datos del DataFrame en la tabla
     for _, row in df.iterrows():
         query = '''
-            INSERT INTO integrantes (correo, nombre, habilitado) 
-            VALUES ({correo}, {nombre}, {habilitado})
+            INSERT INTO proyectos (nombre_proyecto, habilitado) 
+            VALUES ({nombre_proyecto},{habilitado})
             '''.format(
-            correo=f"'{row['correo']}'",  # Envolver en comillas simples
-            nombre=f"'{row['nombre']}'",  # Envolver en comillas simples
+            nombre_proyecto=f"'{row['nombre_proyecto']}'",  # Envolver en comillas simples
             habilitado=row['habilitado']  # Asegurar que sea un valor numérico o booleano
         )
         cursor.execute(query)
 
     conn.commit()
     conn.close()
+
+# guardar_datos_proyectos()
+
+def integrantesCorreo(credenciales):
+
+    conn = psycopg2.connect(
+        database=credenciales["database"],
+        user=credenciales["user"],
+        password=credenciales["password"],
+        host=credenciales["host"],
+        port=credenciales["port"]
+    )
+
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT correo FROM integrantes;") ##Poner el orderby
+
+    # Fetch the result
+    queryData = cursor.fetchall()
+
+    return queryData
+
+def listaProyectos(credenciales):
+
+    conn = psycopg2.connect(
+        database=credenciales["database"],
+        user=credenciales["user"],
+        password=credenciales["password"],
+        host=credenciales["host"],
+        port=credenciales["port"]
+    )
+
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT nombre_proyecto FROM proyectos;") ##Poner el orderby
+
+    # Fetch the result
+    queryData = cursor.fetchall()
+
+    return queryData
+
+
 
 def guardarEvaluacionPostgres(identif, Tipo, Via, Evaluacion, timeInicio,credenciales):
 
@@ -188,7 +228,6 @@ def guardarEvaluacionPostgres(identif, Tipo, Via, Evaluacion, timeInicio,credenc
 
     # Close the connection
     conn.close()
-
 
 
 def obtenerIdentifPostgres(credenciales):
@@ -368,24 +407,7 @@ def paciente_num_visitas(credenciales,cedula):
 # valor=paciente_num_visitas(cred,'1212')
 # print(valor)
 
-def paciente_serie_tiempo(credenciales):
 
-    conn = psycopg2.connect(
-        database=credenciales["database"],
-        user=credenciales["user"],
-        password=credenciales["password"],
-        host=credenciales["host"],
-        port=credenciales["port"]
-    )
-
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT DATE(timeinicio) AS date, COUNT(*) AS patient_count FROM paciente WHERE cedula != '1212' GROUP BY DATE(timeinicio) ORDER BY DATE(timeinicio);")
-
-    # Fetch the result
-    queryData = cursor.fetchall()
-
-    return queryData
 
 def datosinstitucionBDs(credenciales):
 
@@ -429,80 +451,6 @@ def datossalidaconsultaBDs(credenciales):
 
     return queryData
 
-def datosseguimientoBDs(credenciales):
-
-    conn = psycopg2.connect(
-        database=credenciales["database"],
-        user=credenciales["user"],
-        password=credenciales["password"],
-        host=credenciales["host"],
-        port=credenciales["port"]
-    )
-
-    cursor = conn.cursor()
-
-    query = """
-    WITH T1 AS (
-        SELECT p.*,
-               e.id AS evaluacion_id, e.tipo, e.evaluacion,
-               'ADOS' AS Clasificacion,
-               'Mensual' AS Seguimiento
-        FROM paciente p
-        LEFT JOIN public.evaluaciones e ON p.id = e.id
-        WHERE e.tipo = 'Zalida' AND (p.cuantosado ~ '^[0-9]' or
-                                     e.evaluacion LIKE '%Iniciar Metformina%' OR
-                                     e.evaluacion LIKE '%Iniciar iSGLT2%' OR
-                                     e.evaluacion LIKE '%Iniciar iDPP4%' OR
-                                     e.evaluacion LIKE '%Iniciar SU%')
-        AND e.evaluacion NOT LIKE '%Ajustar Insulina%'
-        AND e.evaluacion NOT LIKE '%Iniciar Insulina%'
-        AND e.evaluacion NOT LIKE '%Basal%'
-        AND e.evaluacion NOT LIKE '%Prandial%'
-        UNION
-        SELECT p.*,
-               e.id AS evaluacion_id, e.tipo, e.evaluacion,
-               'Insulina' AS Clasificacion,
-               'Quincenal' AS Seguimiento
-        FROM paciente p
-        LEFT JOIN public.evaluaciones e ON p.id = e.id
-        WHERE (e.evaluacion LIKE '%Ajustar Insulina%' OR
-               e.evaluacion LIKE '%Iniciar Insulina%' OR
-                e.evaluacion LIKE '%Basal%' OR
-                e.evaluacion LIKE '%Prandial%'
-            )
-        AND e.tipo = 'Zalida'
-        UNION
-        SELECT p.*,
-               e.id AS evaluacion_id, e.tipo, e.evaluacion,
-                'aGLP' AS Clasificacion,
-                '1° vez a los 15 días y luego mensual' AS Seguimiento
-        FROM paciente p
-        LEFT JOIN public.evaluaciones e ON p.id = e.id
-        WHERE e.tipo = 'Zalida'
-          AND e.evaluacion LIKE '%Iniciar aGLP1.%'
-          AND p.subgrupomedicamento NOT LIKE '%Prandial%'
-          AND p.subgrupomedicamento NOT LIKE '%Basal%'
-          AND e.evaluacion NOT LIKE '%Basal%'
-          AND e.evaluacion NOT LIKE '%Prandial%'
-          AND e.evaluacion NOT LIKE '%Ajustar Insulina%'
-          AND e.evaluacion NOT LIKE '%Iniciar Insulina%'
-    ),
-    T2 AS (
-        SELECT cedula, timeinicio, procesado
-        FROM nuevos_seguimientos
-    )
-    SELECT T1.*, T2.procesado
-    FROM T1
-    LEFT JOIN T2
-    ON T1.cedula = T2.cedula
-    AND T1.timeinicio = T2.timeinicio
-    WHERE T2.procesado = false
-"""
-    cursor.execute(query)
-    # Fetch the result
-    queryData = cursor.fetchall()
-
-    return queryData
 
 def update_processed_status(credenciales,cedula, timeInicio):
     conn = psycopg2.connect(

@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Registro de Proyectos</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -34,12 +33,12 @@
             color: #333;
         }
 
-        select, input[type="text"], input[type="number"] {
-            width: 90%; /* Ajuste para que se adapten a las celdas */
-            padding: 5px; /* Reducido para que sean más compactos */
+        select, input[type="number"] {
+            width: 90%;
+            padding: 5px;
             border: 1px solid #ccc;
             border-radius: 3px;
-            font-size: 14px; /* Tamaño de texto ajustado */
+            font-size: 14px;
             box-sizing: border-box;
         }
 
@@ -47,7 +46,7 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
-            font-size: 14px; /* Tamaño de tabla ajustado */
+            font-size: 14px;
         }
 
         table th {
@@ -58,7 +57,7 @@
         }
 
         table td {
-            padding: 5px; /* Reducido para que las celdas sean más compactas */
+            padding: 5px;
             text-align: center;
         }
 
@@ -88,17 +87,14 @@
     </style>
 </head>
 <body>
-    <h1>Registro de Proyectos</h1>
+    <h1>Pulso Proyectos DnA</h1>
     <form method="POST" action="/">
         <label for="correo">Correo:</label>
         <select id="correo" name="correo" required>
             <option value="" disabled selected>Seleccione su correo</option>
-            <option value="usuario1@example.com">usuario1@example.com</option>
-            <option value="usuario2@example.com">usuario2@example.com</option>
-            <option value="usuario3@example.com">usuario3@example.com</option>
         </select>
 
-        <table border="1">
+        <table border="1" id="tabla-proyectos">
             <thead>
                 <tr>
                     <th>Nombre del Proyecto</th>
@@ -108,48 +104,82 @@
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td><input type="text" name="nombre_proyecto_1" required></td>
-                    <td>
-                        <select name="dedicacion_1" required>
-                            <option value="10">10%</option>
-                            <option value="20">20%</option>
-                            <option value="30">30%</option>
-                            <option value="40">40%</option>
-                            <option value="50">50%</option>
-                            <option value="60">60%</option>
-                            <option value="70">70%</option>
-                            <option value="80">80%</option>
-                            <option value="90">90%</option>
-                            <option value="100">100%</option>
-                        </select>
-                    </td>
-                    <td><input type="number" name="riesgo_1" min="1" max="5" required></td>
-                    <td><input type="number" name="valor_1" min="1" max="5" required></td>
-                </tr>
-                <tr>
-                    <td><input type="text" name="nombre_proyecto_2"></td>
-                    <td>
-                        <select name="dedicacion_2">
-                            <option value="10">10%</option>
-                            <option value="20">20%</option>
-                            <option value="30">30%</option>
-                            <option value="40">40%</option>
-                            <option value="50">50%</option>
-                            <option value="60">60%</option>
-                            <option value="70">70%</option>
-                            <option value="80">80%</option>
-                            <option value="90">90%</option>
-                            <option value="100">100%</option>
-                        </select>
-                    </td>
-                    <td><input type="number" name="riesgo_2" min="1" max="5"></td>
-                    <td><input type="number" name="valor_2" min="1" max="5"></td>
-                </tr>
+                <!-- Filas generadas dinámicamente -->
             </tbody>
         </table>
 
         <button type="submit">Enviar</button>
     </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const selectCorreo = document.getElementById('correo');
+            const tablaProyectos = document.getElementById('tabla-proyectos').querySelector('tbody');
+
+            // Fetch para cargar correos
+            fetch('/integrantes')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Error en la respuesta del servidor: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        data.forEach(correo => {
+                            const option = document.createElement('option');
+                            option.value = correo;
+                            option.textContent = correo;
+                            selectCorreo.appendChild(option);
+                        });
+                    } else {
+                        console.error('El formato de los datos no es válido:', data);
+                    }
+                })
+                .catch(error => console.error('Error al obtener los datos:', error));
+
+            // Fetch para cargar proyectos y generar filas dinámicamente
+            fetch('/proyectos')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Error en la respuesta del servidor: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        data.forEach((proyecto, index) => {
+                            const fila = document.createElement('tr');
+
+                            fila.innerHTML = `
+                                <td>${proyecto}</td>
+                                <td>
+                                    <select name="dedicacion_${index + 1}" required>
+                                        <option value="0">0%</option>
+                                        <option value="10">10%</option>
+                                        <option value="20">20%</option>
+                                        <option value="30">30%</option>
+                                        <option value="40">40%</option>
+                                        <option value="50">50%</option>
+                                        <option value="60">60%</option>
+                                        <option value="70">70%</option>
+                                        <option value="80">80%</option>
+                                        <option value="90">90%</option>
+                                        <option value="100">100%</option>
+                                    </select>
+                                </td>
+                                <td><input type="number" name="riesgo_${index + 1}" min="1" max="5" required></td>
+                                <td><input type="number" name="valor_${index + 1}" min="1" max="5" required></td>
+                            `;
+
+                            tablaProyectos.appendChild(fila);
+                        });
+                    } else {
+                        console.error('El formato de los datos no es válido:', data);
+                    }
+                })
+                .catch(error => console.error('Error al obtener los datos:', error));
+        });
+    </script>
 </body>
 </html>
