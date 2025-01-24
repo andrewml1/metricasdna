@@ -1,0 +1,9 @@
+{
+    "admin": {
+        "database": "postgres",
+        "user": "amontoyal",
+        "password": "LaboratorioDnA2025",
+        "host": "datosbancol.postgres.database.azure.com",
+        "port": "5432"
+    }
+}
