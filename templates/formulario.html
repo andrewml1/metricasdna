@@ -101,6 +101,7 @@
                 <tr>
                     <th>Nombre del Proyecto</th>
                     <th>Dedicación (%)</th>
+                    <th>Avance (%)</th>
                     <th>Riesgo (1 a 5)</th>
                     <th>Valor (1 a 5)</th>
                 </tr>
@@ -138,28 +139,33 @@
 
             // Fetch para cargar proyectos dinámicamente
             fetch('/proyectos')
-            .then(response => response.json())
-            .then(data => {
-                if (Array.isArray(data)) {
-                    data.forEach((proyecto, index) => {
-                        const fila = document.createElement('tr');
-                        fila.innerHTML = `
-                            <td>${proyecto}<input type="hidden" name="proyecto[]" value="${proyecto}"></td>
-                            <td>
-                                <select name="dedicacion[]" >
-                                    ${[...Array(11).keys()].map(i => `<option value="${i * 10}">${i * 10}%</option>`).join('')}
-                                </select>
-                            </td>
-                            <td><input type="number" name="riesgo[]" min="1" max="5" ></td>
-                            <td><input type="number" name="valor[]" min="1" max="5" ></td>
-                        `;
-                        tablaProyectos.appendChild(fila);
-                    });
-                } else {
-                    console.error('El formato de los datos no es válido:', data);
-                }
-            })
-            .catch(error => console.error('Error al cargar los proyectos:', error));
+                .then(response => response.json())
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        data.forEach((proyecto, index) => {
+                            const fila = document.createElement('tr');
+                            fila.innerHTML = `
+                                <td>${proyecto}<input type="hidden" name="proyecto[]" value="${proyecto}"></td>
+                                <td>
+                                    <select name="dedicacion[]">
+                                        ${[...Array(11).keys()].map(i => `<option value="${i * 10}">${i * 10}%</option>`).join('')}
+                                    </select>
+                                </td>
+                                <td>
+                                    <select name="avance[]">
+                                        ${[...Array(21).keys()].map(i => `<option value="${i * 5}">${i * 5}%</option>`).join('')}
+                                    </select>
+                                </td>
+                                <td><input type="number" name="riesgo[]" min="1" max="5"></td>
+                                <td><input type="number" name="valor[]" min="1" max="5"></td>
+                            `;
+                            tablaProyectos.appendChild(fila);
+                        });
+                    } else {
+                        console.error('El formato de los datos no es válido:', data);
+                    }
+                })
+                .catch(error => console.error('Error al cargar los proyectos:', error));
         });
     </script>
 </body>

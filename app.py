@@ -1,9 +1,8 @@
 import os
-
 from flask import Flask, render_template, request, redirect, url_for, jsonify
-
 from baseDatos import conectarCredenciales, integrantesCorreo, listaProyectos, guardarMetricas, \
     obtenerIdIntegrantePorCorreo, obtenerIdProyecto
+import datetime
 
 app = Flask(__name__)
 
@@ -29,6 +28,7 @@ def registrar():
         dedicacion = request.form.getlist("dedicacion[]")
         riesgo = request.form.getlist("riesgo[]")
         valor = request.form.getlist("valor[]")
+        avance=request.form.getlist("avance[]")
 
         # Guardar la información
         cred = conectarCredenciales("admin")
@@ -37,7 +37,7 @@ def registrar():
         for i, proyecto in enumerate(proyectos):
             if not (riesgo[i] == "" and valor[i] == ""):
                 idProyecto = obtenerIdProyecto(cred, proyecto)
-                guardarMetricas(cred, idIntegrante, idProyecto, dedicacion[i], riesgo[i], valor[i])
+                guardarMetricas(cred, idIntegrante, idProyecto, dedicacion[i], riesgo[i], valor[i],avance,datetime.datetime.now())
 
         # Redirigir a la página de agradecimiento
         return redirect(url_for("gracias"))

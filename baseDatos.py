@@ -89,6 +89,10 @@ def crearTablasPostgres(credenciales):
                 CONSTRAINT fk_proyecto FOREIGN KEY (proyecto_id) REFERENCES proyectos(ID) ON DELETE CASCADE                -- Si se elimina el proyecto, se eliminan sus métricas
             );
         ''')
+    else:
+        ## Si la tabla existe, agregar la columna funcionalidad si no está presente
+        cursor.execute("ALTER TABLE metricas ADD COLUMN IF NOT EXISTS avance NUMERIC(5, 2);")
+        cursor.execute("ALTER TABLE metricas ADD COLUMN IF NOT EXISTS timeInicio TEXT;")
 
     # Commit the transaction
     conn.commit()
@@ -251,7 +255,7 @@ def obtenerIdProyecto(credenciales, proyecto):
 
     return IdProyecto
 
-def guardarMetricas(credenciales,idIntegrante, idProyecto, dedicacion, riesgo, valor):
+def guardarMetricas(credenciales,idIntegrante, idProyecto, dedicacion, riesgo, valor, avance, timeinicio):
 
     conn =psycopg2.connect(
         database=credenciales["database"],
@@ -265,8 +269,8 @@ def guardarMetricas(credenciales,idIntegrante, idProyecto, dedicacion, riesgo, v
 
     query = f'''
     INSERT INTO metricas (
-        integrante_id, proyecto_id, dedicacion, riesgo, valor
-    ) VALUES ({idIntegrante}, '{idProyecto}', '{dedicacion}', '{riesgo}', '{valor}')
+        integrante_id, proyecto_id, dedicacion, riesgo, valor, avance, timeinicio
+    ) VALUES ({idIntegrante}, '{idProyecto}', '{dedicacion}', '{riesgo}', '{valor}','{avance}','{timeinicio}')
     '''
 
     cursor.execute(query)
