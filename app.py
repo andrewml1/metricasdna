@@ -20,7 +20,6 @@ def proyectos():
     paciente_data = listaProyectos(cred)
     return jsonify(paciente_data)
 
-
 @app.route("/", methods=["GET", "POST"])
 def registrar():
     if request.method == "POST":
