@@ -50,6 +50,8 @@ def crearTablasPostgres(credenciales):
             );
         ''')
 
+        # cursor.execute("ALTER TABLE integrantes ADD CONSTRAINT unique_correo UNIQUE (correo);")
+
     cursor = conn.cursor()
     # Verificar si la tabla existe
     table_name = 'proyectos'
@@ -67,6 +69,8 @@ def crearTablasPostgres(credenciales):
                 habilitado BOOLEAN DEFAULT TRUE -- Indica si el proyecto está habilitado (por defecto TRUE)
             );
         ''')
+    # else:
+    #     cursor.execute("ALTER TABLE proyectos ADD CONSTRAINT unique_nombre_proyecto UNIQUE (nombre_proyecto);")
 
     # Verificar si la tabla existe
     table_name = 'metricas'
@@ -105,35 +109,45 @@ def crearTablasPostgres(credenciales):
 #Que pasa si se borra un integrante?
 def guardar_datos_integrantes():
 
-        credenciales=conectarCredenciales('admin')
+    credenciales = conectarCredenciales('admin')
 
-        conn = psycopg2.connect(
-            database=credenciales["database"],
-            user=credenciales["user"],
-            password=credenciales["password"],
-            host=credenciales["host"],
-            port=credenciales["port"]
-        )
+    conn = psycopg2.connect(
+        database=credenciales["database"],
+        user=credenciales["user"],
+        password=credenciales["password"],
+        host=credenciales["host"],
+        port=credenciales["port"]
+    )
 
-        # Leer el archivo CSV
-        df = pd.read_csv('integrantes.csv', sep=';')
+    # Leer el archivo CSV
+    df = pd.read_csv('integrantes.csv', sep=';')
 
-        cursor = conn.cursor()
-        # Insertar los datos del DataFrame en la tabla
-        # Insertar datos del DataFrame en la tabla
-        for _, row in df.iterrows():
-            query = '''
-            INSERT INTO integrantes (correo, nombre, habilitado) 
-            VALUES ({correo}, {nombre}, {habilitado})
-            '''.format(
-                correo=f"'{row['correo']}'",  # Envolver en comillas simples
-                nombre=f"'{row['nombre']}'",  # Envolver en comillas simples
-                habilitado=row['habilitado']  # Asegurar que sea un valor numérico o booleano
-            )
-            cursor.execute(query)
+    cursor = conn.cursor()
 
-        conn.commit()
-        conn.close()
+    # Insertar o actualizar los datos del DataFrame en la tabla
+    for _, row in df.iterrows():
+        query = '''
+                INSERT INTO integrantes (correo, nombre, habilitado)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (correo) DO UPDATE
+                SET 
+                    nombre = EXCLUDED.nombre,
+                    habilitado = EXCLUDED.habilitado
+                WHERE 
+                    integrantes.nombre <> EXCLUDED.nombre OR 
+                    integrantes.habilitado <> EXCLUDED.habilitado
+                '''
+        # Ejecutar la consulta con parámetros
+        cursor.execute(query, (row['correo'], row['nombre'], row['habilitado']))
+
+    # Confirmar los cambios
+    conn.commit()
+
+    # Cerrar la conexión
+    cursor.close()
+    conn.close()
+
+# guardar_datos_integrantes()
 
 #Que pasa si se borra un proyecto?
 def guardar_datos_proyectos():
@@ -151,17 +165,19 @@ def guardar_datos_proyectos():
     df = pd.read_csv('proyectos.csv', sep=';')
 
     cursor = conn.cursor()
-    # Insertar los datos del DataFrame en la tabla
+
+    # Iterar sobre cada fila del DataFrame e insertar o actualizar la información
     for _, row in df.iterrows():
         query = '''
             INSERT INTO proyectos (nombre_proyecto, habilitado) 
-            VALUES ({nombre_proyecto},{habilitado})
-            '''.format(
-            nombre_proyecto=f"'{row['nombre_proyecto']}'",  # Envolver en comillas simples
-            habilitado=row['habilitado']  # Asegurar que sea un valor numérico o booleano
-        )
-        cursor.execute(query)
+            VALUES (%s, %s)
+            ON CONFLICT (nombre_proyecto) 
+            DO UPDATE SET habilitado = EXCLUDED.habilitado;
+        '''
+        # Ejecutar la consulta con los valores
+        cursor.execute(query, (row['nombre_proyecto'], row['habilitado']))
 
+    # Confirmar los cambios
     conn.commit()
     conn.close()
 
@@ -179,7 +195,7 @@ def integrantesCorreo(credenciales):
 
     cursor = conn.cursor()
 
-    cursor.execute("SELECT correo FROM integrantes;") ##Poner el orderby
+    cursor.execute("SELECT correo FROM integrantes ORDER BY correo ASC;") ##Poner el orderby
 
     # Fetch the result
     queryData = cursor.fetchall()
@@ -198,7 +214,7 @@ def listaProyectos(credenciales):
 
     cursor = conn.cursor()
 
-    cursor.execute("SELECT nombre_proyecto FROM proyectos;") ##Poner el orderby
+    cursor.execute("SELECT nombre_proyecto FROM proyectos ORDER BY nombre_proyecto ASC;") ##Poner el orderby
 
     # Fetch the result
     queryData = cursor.fetchall()

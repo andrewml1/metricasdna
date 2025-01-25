@@ -37,7 +37,7 @@ def registrar():
         for i, proyecto in enumerate(proyectos):
             if not (riesgo[i] == "" and valor[i] == ""):
                 idProyecto = obtenerIdProyecto(cred, proyecto)
-                guardarMetricas(cred, idIntegrante, idProyecto, dedicacion[i], riesgo[i], valor[i],avance,datetime.datetime.now())
+                guardarMetricas(cred, idIntegrante, idProyecto, dedicacion[i], riesgo[i], valor[i],avance[i],datetime.datetime.now())
 
         # Redirigir a la página de agradecimiento
         return redirect(url_for("gracias"))
